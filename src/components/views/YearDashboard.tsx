@@ -1,53 +1,94 @@
+import { useState, useEffect } from "react";
 import { Ticket, DollarSign, Users, TrendingUp } from "lucide-react";
 import { MetricCard } from "../MetricCard";
 import { StatsChart } from "../StatsChart";
 import { AttractionsGrid } from "../AttractionsGrid";
+import { useData } from "@/contexts/DataContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function YearDashboard() {
+  const { fetchAnnualAnalytics, loading } = useData();
+  const [metrics, setMetrics] = useState({
+    totalTickets: 0,
+    totalAmount: "₹0",
+    monthlyAverage: "0",
+    annualGrowth: "0",
+    chartData: [],
+    attractions: [],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchAnnualAnalytics();
+      if (data) {
+        setMetrics({
+          totalTickets: data.totalTickets || 0,
+          totalAmount: data.totalAmount || "₹0",
+          monthlyAverage: data.monthlyAverage || "0",
+          annualGrowth: data.annualGrowth || "0",
+          chartData: data.chartData || [],
+          attractions: data.attractions || [],
+        });
+      }
+    };
+
+    fetchData();
+  }, [fetchAnnualAnalytics]);
+
   const yearMetrics = [
     {
       title: "Total Tickets",
-      value: 6195,
+      value: metrics.totalTickets,
       icon: Ticket,
       trend: { value: 22, isPositive: true },
     },
     {
       title: "Total Amount",
-      value: "₹1,505,880",
+      value: metrics.totalAmount,
       icon: DollarSign,
       variant: "primary" as const,
       trend: { value: 28, isPositive: true },
     },
     {
       title: "Monthly Average",
-      value: 516,
+      value: metrics.monthlyAverage,
       icon: Users,
       variant: "success" as const,
       trend: { value: 18, isPositive: true },
     },
     {
       title: "Annual Growth",
-      value: "+22%",
+      value: `${metrics.annualGrowth}%`,
       icon: TrendingUp,
       variant: "warning" as const,
-      trend: { value: 15, isPositive: true },
+      trend: {
+        value: parseFloat(metrics.annualGrowth),
+        isPositive: parseFloat(metrics.annualGrowth) >= 0,
+      },
     },
   ];
 
-  const chartData = [
-    { month: "Jan", value: 450 },
-    { month: "Feb", value: 380 },
-    { month: "Mar", value: 520 },
-    { month: "Apr", value: 680 },
-    { month: "May", value: 590 },
-    { month: "Jun", value: 720 },
-    { month: "Jul", value: 890 },
-    { month: "Aug", value: 750 },
-    { month: "Sep", value: 640 },
-    { month: "Oct", value: 580 },
-    { month: "Nov", value: 485 },
-    { month: "Dec", value: 500 },
-  ];
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-1/3 mb-2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <Skeleton key={item} className="h-32 rounded-lg" />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -69,11 +110,11 @@ export function YearDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatsChart
           title="Monthly Sales Overview"
-          data={chartData}
+          data={metrics.chartData}
           dataKey="value"
           nameKey="month"
         />
-        <AttractionsGrid period="year" />
+        <AttractionsGrid period="year" attractions={metrics.attractions} />
       </div>
     </div>
   );

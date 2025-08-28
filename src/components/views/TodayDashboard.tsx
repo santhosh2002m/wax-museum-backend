@@ -1,49 +1,94 @@
+import { useState, useEffect } from "react";
 import { Ticket, DollarSign, Users, TrendingUp } from "lucide-react";
 import { MetricCard } from "../MetricCard";
 import { StatsChart } from "../StatsChart";
 import { AttractionsGrid } from "../AttractionsGrid";
+import { useData } from "@/contexts/DataContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function TodayDashboard() {
+  const { fetchTodayAnalytics, loading } = useData();
+  const [metrics, setMetrics] = useState({
+    totalTickets: 0,
+    totalAmount: "₹0",
+    activeVisitors: 0,
+    revenueGrowth: "0",
+    attractions: [],
+    chartData: [],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchTodayAnalytics();
+      if (data) {
+        setMetrics({
+          totalTickets: data.totalTickets || 0,
+          totalAmount: data.totalAmount || "₹0",
+          activeVisitors: data.activeVisitors || 0,
+          revenueGrowth: data.revenueGrowth || "0",
+          attractions: data.attractions || [],
+          chartData: data.chartData || [],
+        });
+      }
+    };
+
+    fetchData();
+  }, [fetchTodayAnalytics]);
+
   const todayMetrics = [
     {
       title: "Total Tickets",
-      value: 44,
+      value: metrics.totalTickets,
       icon: Ticket,
       trend: { value: 12, isPositive: true },
     },
     {
       title: "Total Amount",
-      value: "₹9720",
+      value: metrics.totalAmount,
       icon: DollarSign,
       variant: "primary" as const,
       trend: { value: 8, isPositive: true },
     },
     {
       title: "Active Visitors",
-      value: 28,
+      value: metrics.activeVisitors,
       icon: Users,
       variant: "success" as const,
       trend: { value: 15, isPositive: true },
     },
     {
       title: "Revenue Growth",
-      value: "+18%",
+      value: `${metrics.revenueGrowth}%`,
       icon: TrendingUp,
       variant: "warning" as const,
-      trend: { value: 5, isPositive: true },
+      trend: {
+        value: parseFloat(metrics.revenueGrowth),
+        isPositive: parseFloat(metrics.revenueGrowth) >= 0,
+      },
     },
   ];
 
-  const chartData = [
-    { time: "9 AM", value: 10 },
-    { time: "10 AM", value: 15 },
-    { time: "11 AM", value: 8 },
-    { time: "12 PM", value: 22 },
-    { time: "1 PM", value: 18 },
-    { time: "2 PM", value: 12 },
-    { time: "3 PM", value: 25 },
-    { time: "4 PM", value: 20 },
-  ];
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-1/3 mb-2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <Skeleton key={item} className="h-32 rounded-lg" />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -65,11 +110,11 @@ export function TodayDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatsChart
           title="Hourly Ticket Sales"
-          data={chartData}
+          data={metrics.chartData}
           dataKey="value"
           nameKey="time"
         />
-        <AttractionsGrid />
+        <AttractionsGrid attractions={metrics.attractions} />
       </div>
     </div>
   );

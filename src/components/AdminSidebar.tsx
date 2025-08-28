@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import type { DashboardView } from "./AdminDashboard";
 import logoImage from "../../public/logo.png";
 
@@ -54,19 +56,6 @@ const sidebarItems = [
     icon: Calendar,
     variant: "default",
   },
-  { id: "edit-profile", label: "Edit Profile", icon: User, variant: "default" },
-  {
-    id: "add-counter",
-    label: "Add New Counter",
-    icon: Plus,
-    variant: "default",
-  },
-  {
-    id: "delete-counter",
-    label: "Delete Counter",
-    icon: Trash2,
-    variant: "default",
-  },
   {
     id: "ticket-details",
     label: "Ticket Details",
@@ -74,6 +63,19 @@ const sidebarItems = [
     variant: "default",
   },
   { id: "guide-score", label: "Guide Score", icon: Award, variant: "default" },
+  {
+    id: "add-counter",
+    label: "Add New Counter",
+    icon: Plus,
+    variant: "default",
+  },
+  { id: "edit-profile", label: "Edit Profile", icon: User, variant: "default" },
+  {
+    id: "delete-counter",
+    label: "Delete Counter",
+    icon: Trash2,
+    variant: "default",
+  },
 ] as const;
 
 export function AdminSidebar({
@@ -82,10 +84,29 @@ export function AdminSidebar({
   isMobileMenuOpen,
   onMobileMenuToggle,
 }: AdminSidebarProps) {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // Filter sidebar items based on user role
+  const filteredSidebarItems =
+    user?.role === "admin"
+      ? sidebarItems
+      : sidebarItems.filter(
+          (item) =>
+            item.id !== "add-counter" &&
+            item.id !== "edit-profile" &&
+            item.id !== "delete-counter"
+        );
+
   return (
     <Sidebar
       className={cn(
-        "border-r border-sidebar-border transition-all duration-300",
+        "border-r border-sidebar-border transition-all duration-200",
         isMobileMenuOpen
           ? "translate-x-0"
           : "-translate-x-full lg:translate-x-0"
@@ -113,7 +134,7 @@ export function AdminSidebar({
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {sidebarItems.map((item) => {
+              {filteredSidebarItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
 
@@ -142,7 +163,8 @@ export function AdminSidebar({
       <SidebarFooter className="p-4 border-t border-sidebar-border">
         <Button
           variant="outline"
-          className="w-full justify-start bg-transparent border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+          className="w-full justify-start bg-transparent border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent hover:text-white"
+          onClick={handleLogout}
         >
           <LogOut className="w-4 h-4 mr-2" />
           Logout

@@ -1,48 +1,94 @@
+import { useState, useEffect } from "react";
 import { Ticket, DollarSign, Users, TrendingUp } from "lucide-react";
 import { MetricCard } from "../MetricCard";
 import { StatsChart } from "../StatsChart";
 import { AttractionsGrid } from "../AttractionsGrid";
+import { useData } from "@/contexts/DataContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Last7DaysDashboard() {
+  const { fetchLast7DaysAnalytics, loading } = useData();
+  const [metrics, setMetrics] = useState({
+    totalTickets: 0,
+    totalAmount: "₹0",
+    dailyAverage: 0,
+    weekGrowth: "0",
+    attractions: [],
+    chartData: [],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchLast7DaysAnalytics();
+      if (data) {
+        setMetrics({
+          totalTickets: data.totalTickets || 0,
+          totalAmount: data.totalAmount || "₹0",
+          dailyAverage: data.dailyAverage || 0,
+          weekGrowth: data.weekGrowth || "0",
+          attractions: data.attractions || [],
+          chartData: data.chartData || [],
+        });
+      }
+    };
+
+    fetchData();
+  }, [fetchLast7DaysAnalytics]);
+
   const weekMetrics = [
     {
       title: "Total Tickets",
-      value: 316,
+      value: metrics.totalTickets,
       icon: Ticket,
       trend: { value: 8, isPositive: true },
     },
     {
       title: "Total Amount",
-      value: "₹55,510",
+      value: metrics.totalAmount,
       icon: DollarSign,
       variant: "primary" as const,
       trend: { value: 12, isPositive: true },
     },
     {
       title: "Daily Average",
-      value: 45,
+      value: metrics.dailyAverage,
       icon: Users,
       variant: "success" as const,
       trend: { value: 5, isPositive: true },
     },
     {
       title: "Week Growth",
-      value: "+8%",
+      value: `${metrics.weekGrowth}%`,
       icon: TrendingUp,
       variant: "warning" as const,
-      trend: { value: 3, isPositive: true },
+      trend: {
+        value: parseFloat(metrics.weekGrowth),
+        isPositive: parseFloat(metrics.weekGrowth) >= 0,
+      },
     },
   ];
 
-  const chartData = [
-    { day: "Mon", value: 45 },
-    { day: "Tue", value: 52 },
-    { day: "Wed", value: 38 },
-    { day: "Thu", value: 41 },
-    { day: "Fri", value: 58 },
-    { day: "Sat", value: 65 },
-    { day: "Sun", value: 42 },
-  ];
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-8 w-1/3 mb-2" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((item) => (
+            <Skeleton key={item} className="h-32 rounded-lg" />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-64 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -64,11 +110,11 @@ export function Last7DaysDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StatsChart
           title="Daily Ticket Sales"
-          data={chartData}
+          data={metrics.chartData}
           dataKey="value"
           nameKey="day"
         />
-        <AttractionsGrid period="week" />
+        <AttractionsGrid period="week" attractions={metrics.attractions} />
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardContent } from "./DashboardContent";
+import { useData } from "@/contexts/DataContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type DashboardView =
   | "today"
@@ -19,10 +21,52 @@ export type DashboardView =
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState<DashboardView>("today");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const {
+    fetchTodayAnalytics,
+    fetchLast7DaysAnalytics,
+    fetchLast30DaysAnalytics,
+    fetchAnnualAnalytics,
+  } = useData();
+  const { logout } = useAuth();
 
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  // Fetch data when view changes
+  useEffect(() => {
+    const fetchData = async () => {
+      switch (currentView) {
+        case "today":
+          await fetchTodayAnalytics();
+          break;
+        case "last-7-days":
+          await fetchLast7DaysAnalytics();
+          break;
+        case "last-30-days":
+          await fetchLast30DaysAnalytics();
+          break;
+        case "year":
+          await fetchAnnualAnalytics();
+          break;
+        default:
+          // Other views don't need data fetching on view change
+          break;
+      }
+    };
+
+    fetchData();
+  }, [
+    currentView,
+    fetchTodayAnalytics,
+    fetchLast7DaysAnalytics,
+    fetchLast30DaysAnalytics,
+    fetchAnnualAnalytics,
+  ]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,6 +77,7 @@ const AdminDashboard = () => {
             onViewChange={setCurrentView}
             isMobileMenuOpen={isMobileMenuOpen}
             onMobileMenuToggle={handleMobileMenuToggle}
+            // onLogout={handleLogout}
           />
 
           <div className="flex-1 flex flex-col">

@@ -3,43 +3,87 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useData } from "@/contexts/DataContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AddCounter() {
   const [formData, setFormData] = useState({
-    counterName: "admin",
+    username: "",
     password: "",
-    confirmPassword: "",
+    role: "counter",
   });
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const { registerCounter } = useData();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
+
+    // Validation
+    if (!formData.username || !formData.password) {
       toast({
         title: "Error",
-        description: "Passwords do not match",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "New counter added successfully",
-    });
+    if (formData.password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setFormData({
-      counterName: "admin",
-      password: "",
-      confirmPassword: "",
-    });
+    setLoading(true);
+
+    try {
+      const success = await registerCounter(
+        formData.username,
+        formData.password,
+        formData.role
+      );
+
+      if (success) {
+        // Reset form on success
+        setFormData({
+          username: "",
+          password: "",
+          role: "counter",
+        });
+        toast({
+          title: "Success",
+          description: "Counter created successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding counter:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add counter. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="space-y-8 p-6 max-w-2xl mx-auto">
+      <div className="text-center">
         <h2 className="text-3xl font-bold text-foreground mb-2">
           Add New Counter
         </h2>
@@ -48,70 +92,94 @@ export function AddCounter() {
         </p>
       </div>
 
-      <div className="max-w-md mx-auto">
-        <Card className="shadow-card">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Plus className="w-8 h-8 text-success" />
+      <Card className="shadow-lg">
+        <CardHeader className="text-center pb-4">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Plus className="w-8 h-8 text-primary" />
+          </div>
+          <CardTitle className="text-xl">Add New Counter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username *</Label>
+              <Input
+                id="username"
+                placeholder="Enter username"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                required
+                disabled={loading}
+              />
             </div>
-            <CardTitle className="text-xl text-success">
-              Add New Counter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="counter-name">Counter Name</Label>
-                <Input
-                  id="counter-name"
-                  value={formData.counterName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, counterName: e.target.value })
-                  }
-                  required
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <div className="relative">
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password (min. 6 characters)"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
                   required
+                  disabled={loading}
+                  minLength={6}
                 />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-success hover:bg-success/90"
+            <div className="space-y-2">
+              <Label htmlFor="role">Role *</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, role: value })
+                }
+                disabled={loading}
               >
-                <User className="w-4 h-4 mr-2" />
-                Add Counter
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="counter">Counter</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" className="w-full mt-6" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding Counter...
+                </>
+              ) : (
+                <>
+                  <User className="w-4 h-4 mr-2" />
+                  Add Counter
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

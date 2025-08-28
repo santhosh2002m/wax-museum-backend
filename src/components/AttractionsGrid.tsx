@@ -2,76 +2,92 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AttractionData {
   name: string;
-  count: number;
-  color: string;
+  total: string;
+  show_name: string;
+  category: string;
 }
 
 interface AttractionsGridProps {
   period?: "today" | "week" | "month" | "year";
+  attractions: AttractionData[];
 }
 
-export function AttractionsGrid({ period = "today" }: AttractionsGridProps) {
-  const getAttractionsData = (): AttractionData[] => {
-    const baseData = [
-      { name: "Combo", count: 17, color: "bg-blue-500" },
-      { name: "Wax Museum", count: 26, color: "bg-green-500" },
-      { name: "Horror House", count: 2, color: "bg-red-500" },
-      { name: "90 combo", count: 0, color: "bg-purple-500" },
-      { name: "80 combo", count: 0, color: "bg-yellow-500" },
-      { name: "70 combo", count: 0, color: "bg-pink-500" },
-      { name: "60 combo", count: 0, color: "bg-indigo-500" },
-      { name: "Bike ride", count: 0, color: "bg-orange-500" },
-      { name: "Bowling", count: 0, color: "bg-teal-500" },
-      { name: "Kids games", count: 0, color: "bg-cyan-500" },
-      { name: "Archery", count: 0, color: "bg-lime-500" },
-      { name: "Bull ride", count: 0, color: "bg-amber-500" },
-      { name: "30 h.h or wax", count: 0, color: "bg-emerald-500" },
-      { name: "50 combo", count: 0, color: "bg-rose-500" },
-    ];
+export function AttractionsGrid({
+  period = "today",
+  attractions,
+}: AttractionsGridProps) {
+  // Generate colors for each attraction
+  const colorClasses = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-yellow-500",
+    "bg-pink-500",
+    "bg-indigo-500",
+    "bg-orange-500",
+    "bg-teal-500",
+    "bg-cyan-500",
+    "bg-lime-500",
+    "bg-amber-500",
+    "bg-emerald-500",
+    "bg-rose-500",
+  ];
 
-    // Adjust data based on period
-    const multiplier =
-      period === "today"
-        ? 1
-        : period === "week"
-        ? 7
-        : period === "month"
-        ? 30
-        : 365;
-    return baseData.map((item) => ({
-      ...item,
-      count: Math.floor(item.count * multiplier * (0.8 + Math.random() * 0.4)),
-    }));
+  const periodTitles = {
+    today: "Today's Attractions",
+    week: "Weekly Attractions",
+    month: "Monthly Attractions",
+    year: "Yearly Attractions",
   };
-
-  const attractions = getAttractionsData();
 
   return (
     <Card className="shadow-card">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-foreground">
-          Attractions Overview
+          {periodTitles[period]}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          {attractions.map((attraction, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${attraction.color}`} />
-                <span className="text-sm font-medium text-foreground truncate">
-                  {attraction.name}
+        {attractions.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No attraction data available
+          </div>
+        ) : (
+          <div
+            className={`grid grid-cols-1 gap-3 ${
+              attractions.length > 6
+                ? "max-h-72 overflow-y-auto scrollbar scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                : ""
+            }`}
+          >
+            {attractions.map((attraction, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      colorClasses[index % colorClasses.length]
+                    }`}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {attraction.show_name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {attraction.category}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-sm font-bold text-primary min-w-[4rem] text-right">
+                  ₹{attraction.total}
                 </span>
               </div>
-              <span className="text-sm font-bold text-primary min-w-[2rem] text-right">
-                {attraction.count}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
