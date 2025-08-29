@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, Search, Pencil, Trash2 } from "lucide-react";
 import { useData } from "@/contexts/DataContext";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth to access user role
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -20,6 +20,8 @@ export function CalendarView() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // Add pagination state
+  const transactionsPerPage = 10; // Set transactions per page
   const [data, setData] = useState({
     totalSales: 0,
     totalAmount: "₹0",
@@ -36,9 +38,8 @@ export function CalendarView() {
   });
 
   const { fetchCalendarData, updateTransaction, deleteTransaction } = useData();
-  const { user } = useAuth(); // Get user from AuthContext to check role
-
-  const isAdmin = user?.role === "admin"; // Check if user is admin
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const handleSearch = async () => {
     if (!startDate || !endDate) {
@@ -51,6 +52,7 @@ export function CalendarView() {
     }
 
     setLoading(true);
+    setCurrentPage(1); // Reset to first page on search
     try {
       const result = await fetchCalendarData(startDate, endDate);
       if (result) {
@@ -132,6 +134,27 @@ export function CalendarView() {
         description: "Failed to delete transaction. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Pagination logic
+  const indexOfLastTransaction = currentPage * transactionsPerPage;
+  const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
+  const currentTransactions = data.transactions.slice(
+    indexOfFirstTransaction,
+    indexOfLastTransaction
+  );
+  const totalPages = Math.ceil(data.transactions.length / transactionsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
   };
 
@@ -250,7 +273,7 @@ export function CalendarView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.transactions.map((transaction: any) => (
+                  {currentTransactions.map((transaction: any) => (
                     <tr
                       key={transaction.id}
                       className="border-b hover:bg-muted/50"
@@ -398,6 +421,34 @@ export function CalendarView() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center p-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                      variant={currentPage === 1 ? "outline" : "default"}
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      variant={
+                        currentPage === totalPages ? "outline" : "default"
+                      }
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

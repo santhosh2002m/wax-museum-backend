@@ -10,6 +10,9 @@ import { DeleteCounter } from "./views/DeleteCounter";
 import { TicketDetails } from "./views/TicketDetails";
 import { GuideScore } from "./views/GuideScore";
 
+// ✅ Import your new CRM view
+import CRMDashboard from "./views/CrmDashboard";
+
 interface DashboardContentProps {
   currentView: DashboardView;
 }
@@ -36,6 +39,11 @@ export function DashboardContent({ currentView }: DashboardContentProps) {
       return <TicketDetails />;
     case "guide-score":
       return <GuideScore />;
+
+    // ✅ New CRM case
+    case "crm-dashboard":
+      return <CRMDashboard />;
+
     default:
       return <TodayDashboard />;
   }

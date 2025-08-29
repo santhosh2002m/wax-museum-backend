@@ -55,6 +55,14 @@ interface CalendarData {
   transactions: Transaction[];
 }
 
+interface Message {
+  id: number;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
 interface DataContextType {
   // Counters
   counters: Counter[];
@@ -105,6 +113,16 @@ interface DataContextType {
   ) => Promise<boolean>;
   deleteTransaction: (id: number) => Promise<boolean>;
 
+  // Messages
+  messages: Message[];
+  sendMessage: (phone: string, message: string) => Promise<boolean>;
+  sendBulkMessages: (phones: string[], message: string) => Promise<boolean>;
+  fetchSentMessages: (
+    startDate: string,
+    endDate: string,
+    status?: string
+  ) => Promise<Message[] | null>;
+
   loading: boolean;
 }
 
@@ -126,6 +144,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [counters, setCounters] = useState<Counter[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const { token } = useAuth();
 
@@ -553,6 +572,97 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Message functions
+  const sendMessage = async (
+    phone: string,
+    message: string
+  ): Promise<boolean> => {
+    try {
+      await makeRequest("/api/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ phone, message }),
+      });
+
+      toast({
+        title: "Message sent",
+        description: `Message sent successfully to ${phone}`,
+      });
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const sendBulkMessages = async (
+    phones: string[],
+    message: string
+  ): Promise<boolean> => {
+    try {
+      await makeRequest("/api/messages/send", {
+        method: "POST",
+        body: JSON.stringify({ phones, message }),
+      });
+
+      toast({
+        title: "Bulk messages sent",
+        description: `Messages sent successfully to ${phones.length} recipients`,
+      });
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Failed to send bulk messages",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const fetchSentMessages = async (
+    startDate: string,
+    endDate: string,
+    status?: string
+  ): Promise<Message[] | null> => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({ startDate, endDate });
+      if (status) query.append("status", status);
+
+      const data = await makeRequest(`/api/messages/sent?${query.toString()}`);
+
+      // Extract the messages array from the response object
+      const messagesArray = data.messages || [];
+
+      // Map the API response to match your Message interface
+      const formattedMessages = messagesArray.map((msg: any) => ({
+        id: msg.id,
+        phone: msg.phone,
+        message: msg.message,
+        status: msg.status,
+        createdAt: msg.sentAt, // Map sentAt to createdAt
+      }));
+
+      setMessages(formattedMessages);
+      return formattedMessages;
+    } catch (error: any) {
+      toast({
+        title: "Failed to fetch sent messages",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     counters,
     fetchCounters,
@@ -576,6 +686,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     fetchCalendarData,
     updateTransaction,
     deleteTransaction,
+    messages,
+    sendMessage,
+    sendBulkMessages,
+    fetchSentMessages,
     loading,
   };
 

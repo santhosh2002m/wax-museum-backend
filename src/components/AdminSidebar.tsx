@@ -9,6 +9,7 @@ import {
   Ticket,
   Award,
   LogOut,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -74,6 +75,14 @@ const sidebarItems = [
     id: "delete-counter",
     label: "Delete Counter",
     icon: Trash2,
+    variant: "default",
+  },
+
+  // ✅ New CRM-related item
+  {
+    id: "crm-dashboard",
+    label: "CRM Dashboard",
+    icon: Users,
     variant: "default",
   },
 ] as const;

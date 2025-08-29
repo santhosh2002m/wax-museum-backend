@@ -16,7 +16,8 @@ export type DashboardView =
   | "add-counter"
   | "delete-counter"
   | "ticket-details"
-  | "guide-score";
+  | "guide-score"
+  | "crm-dashboard";
 
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState<DashboardView>("today");
@@ -37,8 +38,11 @@ const AdminDashboard = () => {
     logout();
   };
 
-  // Fetch data when view changes
+  // Fetch data when view changes (excluding CRM dashboard)
   useEffect(() => {
+    // Don't fetch data when switching to CRM dashboard
+    if (currentView === "crm-dashboard") return;
+
     const fetchData = async () => {
       switch (currentView) {
         case "today":
@@ -77,7 +81,6 @@ const AdminDashboard = () => {
             onViewChange={setCurrentView}
             isMobileMenuOpen={isMobileMenuOpen}
             onMobileMenuToggle={handleMobileMenuToggle}
-            // onLogout={handleLogout}
           />
 
           <div className="flex-1 flex flex-col">
